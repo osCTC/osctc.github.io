@@ -48,14 +48,25 @@ document.addEventListener("DOMContentLoaded", function() {
             withCredentials: undefined
         });
 
-        // Binance Import
+        // Binance Trade Import
         if(exchangeImport == 1) {
-            datatable.rows().add(binanceImport(results.data));
+            console.log(results.data);
+            datatable.rows().add(binanceTradeImport(results.data));
             myModalInstance.hide();
         }
-        // Bittrex Import
-        else if (exchangeImport == 2) {
-            datatable.rows().add(bittrexImport(results.data));
+        // Binance Deposit Import
+        else if(exchangeImport == 2) {
+            datatable.rows().add(binanceDepositImport(results.data));
+            myModalInstance.hide();
+        }
+        // Bittrex Trade Import
+        else if (exchangeImport == 3) {
+            datatable.rows().add(bittrexTradeImport(results.data));
+            myModalInstance.hide();
+        }
+        // HitBTC Trade Import
+        else if (exchangeImport == 4) {
+            datatable.rows().add(hitbtcTradeImport(results.data));
             myModalInstance.hide();
         } else {
             alert("Choose an exchange.");
@@ -65,11 +76,20 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-function binanceImport(data) {
+function binanceTradeImport(data) {
     let inputStream = [];
+    let currentBalance = [];
+    // alert(data);
     [].forEach.call(data, function(row) {
         let selledCoin = row.Market.split(row["Fee Coin"]);
         selledCoin = selledCoin[0] || selledCoin[1];
+
+        if (!(row.Market in currentBalance)) {
+            currentBalance[row.Market] = row.Type === "BUY" ? row.Amount - row.Fee : -row.Amount;
+        } else {
+            currentBalance[row.Market] += row.Type === "BUY" ? row.Amount - row.Fee : -row.Amount;
+        }
+
         inputStream.push([
             // Type
             row.Type,
@@ -88,14 +108,50 @@ function binanceImport(data) {
             // Date
             row.Date,
             // Trade ID
-            "-"
+            "-",
+            // Exchange
+            "Binance"
+        ]);
+    });
+
+    for (let index in currentBalance) {    // don't actually do this
+        currentBalance = parseFloat(currentBalance[index].toFixed(8));
+    }
+
+    return inputStream;
+}
+
+function binanceDepositImport(data) {
+    let inputStream = [];
+    [].forEach.call(data, function(row) {
+        inputStream.push([
+            // Type
+            "Desposit",
+            // Buy
+            row.Amount,
+            // Cur.
+            row.Coin,
+            // Sell
+            "-",
+            // Cur.
+            "-",
+            // Rate
+            "",
+            // Fee
+            "-",
+            // Date
+            row.Date,
+            // Trade ID
+            row.TXID,
+            // Exchange
+            "Binance"
         ]);
     });
 
     return inputStream;
 }
 
-function bittrexImport(data) {
+function bittrexTradeImport(data) {
     let inputStream = [];
     [].forEach.call(data, function(row) {
         let selledCoin = row.Exchange.split("-");
@@ -118,7 +174,41 @@ function bittrexImport(data) {
             // 8 Date
             row.Closed,
             // 9 Trade ID
-            row.OrderUuid
+            row.OrderUuid,
+            // 10 Exchange
+            "Bittrex"
+        ]);
+    });
+
+    return inputStream;
+}
+
+function hitbtcTradeImport(data) {
+    let inputStream = [];
+    [].forEach.call(data, function(row) {
+        let selledCoin = row.Instrument.split("/");
+        [selledCoin[0], selledCoin[1]] = row.Side === "buy" ? [selledCoin[0], selledCoin[1]] : [selledCoin[1], selledCoin[0]];
+        inputStream.push([
+            // 1 Type
+            row.Side === "buy" ? "BUY" : "SELL",
+            // 2 Buy
+            row.Side === "buy" ? row.Quantity : row.Total,
+            // 3 Cur.
+            selledCoin[0],
+            // 4 Sell
+            row.Side === "buy" ? (row.Total * -1) : row.Quantity,
+            // 5 Cur.
+            selledCoin[1],
+             // 6 Rate
+             row.Price,
+             // 7 Fee
+             row.Fee,
+            // 8 Date
+            row["Date (+01)"],
+             // 9 Trade ID
+             row["Trade ID"],
+            // 10 Exchange
+            "HitBTC"
         ]);
     });
 

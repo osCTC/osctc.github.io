@@ -10,11 +10,6 @@
     <script type="text/javascript" src="./js/main.js"></script>
 </head>
 <body>
-
-
-    <!--th>Exchange</th>
-    <th>Comment</th -->
-
 <div class="container">
     <div class="col-md-12">
         <!-- provide a trigger button -->
@@ -29,14 +24,17 @@
         <div class="modal-content">
           <div class="modal-header">
             <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">×</span></button>
-            <h4 class="modal-title" id="myModalLabel">Modal title</h4>
+            <h4 class="modal-title" id="myModalLabel">Import</h4>
           </div>
           <div class="modal-body">
             <label>
               <select id="importtype" class="form-control">
                 <option selected disabled>Exchange</option>
-                <option value="1">Binance</option>
-                <option value="2">Bittrex</option>
+                <option value="1">Binance Trades</option>
+                <option value="2" disabled>Binance Desposits</option>
+                <option disabled>---</option>
+                <option value="3">Bittrex Trades</option>
+                <option value="4">HitBTC Trades</option>
               </select>
             </label>
             <div>
@@ -65,6 +63,7 @@
                         <th>Fee</th>
                         <th data-type="date" data-format="YYYY/MM/DD">Date</th>
                         <th>Trade ID</th>
+                        <th>Exchange</th>
                     </tr>
                 </thead>
                 <tbody>
