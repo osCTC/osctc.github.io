@@ -1,3 +1,5 @@
+var currentBalance = [];
+
 document.addEventListener("DOMContentLoaded", function() {
     var myModal = document.getElementById("myModal");
 
@@ -71,24 +73,33 @@ document.addEventListener("DOMContentLoaded", function() {
         } else {
             alert("Choose an exchange.");
         }
-
-
     });
 });
 
+function getTRXBTC() {
+    loadJSON("https://api.binance.com/api/v1/aggTrades?symbol=TRXBTC&startTime=1517710196000&endTime=1517710197000");
+}
+
 function binanceTradeImport(data) {
+    let a = 0;
     let inputStream = [];
-    let currentBalance = [];
-    // alert(data);
     [].forEach.call(data, function(row) {
         let selledCoin = row.Market.split(row["Fee Coin"]);
         selledCoin = selledCoin[0] || selledCoin[1];
 
         if (!(row.Market in currentBalance)) {
-            currentBalance[row.Market] = row.Type === "BUY" ? row.Amount - row.Fee : -row.Amount;
+            currentBalance[row.Market] = [
+                // Amount
+                row.Type === "BUY" ? row.Amount - row.Fee : -row.Amount
+            ];
         } else {
-            currentBalance[row.Market] += row.Type === "BUY" ? row.Amount - row.Fee : -row.Amount;
+            currentBalance[row.Market] = [
+                // Amount
+                currentBalance[row.Market][0] + (row.Type === "BUY" ? row.Amount - row.Fee : -row.Amount),
+            ];
         }
+        // Value in BTC
+        currentBalance[row.Market].push(currentBalance[row.Market][0] * getTRXBTC());
 
         inputStream.push([
             // Type
@@ -113,12 +124,41 @@ function binanceTradeImport(data) {
             "Binance"
         ]);
     });
-
-    for (let index in currentBalance) {    // don't actually do this
-        currentBalance = parseFloat(currentBalance[index].toFixed(8));
-    }
+    console.log(currentBalance);
 
     return inputStream;
+}
+
+function loadJSON(url) {
+    // Do the usual XHR stuff
+    var req = new XMLHttpRequest();
+    /**
+     * @todo: extract paht to library
+     */
+    req.open("GET", url);
+    req.setRequestHeader('Access-Control-Allow-Origin', '*');
+
+    req.onload = () => {
+        // This is called even on 404 etc
+        // so check the status
+        if (req.status == 200) {
+            // Resolve the promise with the response text
+            resolve(req.response);
+        }
+        else {
+            // Otherwise reject with the status text
+            // which will hopefully be a meaningful error
+            reject(Error(req.statusText));
+        }
+    };
+
+    // Handle network errors
+    req.onerror = () => {
+        reject(Error("Network Error"));
+    };
+
+    // Make the request
+    req.send();
 }
 
 function binanceDepositImport(data) {
